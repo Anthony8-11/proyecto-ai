@@ -64,19 +64,30 @@ class ClassicSearch:
                     )
         return best_action
 
-    def evaluate(self, episodes: int = 10) -> float:
-        """Run Greedy for N episodes and return average total reward."""
-        total = 0.0
-        for _ in range(episodes):
-            self._env.reset()
-            ep_reward = 0.0
-            for _ in range(200):
-                state = self._env.get_state()
-                action = self.greedy_action(state)
-                _, reward, done = self._env.step(action)
-                ep_reward += reward
-                if done:
-                    break
-            total += ep_reward
-        self._env.reset()
-        return round(total / episodes, 2)
+    def evaluate(self, episodes: int = 10) -> dict[str, float]:
+        """Run Greedy and A* on fresh environment instances (never touches the live env).
+
+        Returns average episode reward for each algorithm.
+        """
+        from .environment import Environment  # local import avoids circular deps
+
+        results: dict[str, float] = {}
+        for algo_name, algo_fn in [
+            ("greedy", self.greedy_action),
+            ("astar", self.astar_action),
+        ]:
+            env = Environment()
+            total = 0.0
+            for _ in range(episodes):
+                env.reset()
+                ep_reward = 0.0
+                for _ in range(200):
+                    state = env.get_state()
+                    action = algo_fn(state)
+                    _, reward, done = env.step(action)
+                    ep_reward += reward
+                    if done:
+                        break
+                total += ep_reward
+            results[algo_name] = round(total / episodes, 2)
+        return results

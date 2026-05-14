@@ -1,11 +1,14 @@
 import { AgentView } from "./components/AgentView";
+import { ComparisonView } from "./components/ComparisonView";
 import { DecisionLog } from "./components/DecisionLog";
 import { RewardChart } from "./components/RewardChart";
 import { useSimulation } from "./hooks/useSimulation";
 
 export default function App() {
-  const { connected, running, step, history, stats, start, pause, reset, fetchStats } =
-    useSimulation();
+  const {
+    connected, running, step, history, stats, comparison, loadingComparison,
+    start, pause, reset, fetchStats, fetchComparison,
+  } = useSimulation();
 
   return (
     <div className="app">
@@ -73,6 +76,11 @@ export default function App() {
         {/* Main content */}
         <section className="content">
           <RewardChart history={history} />
+          <ComparisonView
+            comparison={comparison}
+            loading={loadingComparison}
+            onCompare={fetchComparison}
+          />
           <DecisionLog history={history} />
         </section>
       </main>

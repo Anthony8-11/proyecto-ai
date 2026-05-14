@@ -55,6 +55,41 @@ export function AgentView({ step, connected }: Props) {
             {step != null ? ACTION_LABELS[step.action] : "—"}
           </strong>
         </div>
+
+        {/* Logic engine: allowed actions */}
+        {step?.allowed_actions && (
+          <div style={{ fontSize: ".72rem", color: "#64748b", marginBottom: ".4rem" }}>
+            Acciones permitidas:{" "}
+            {ACTION_LABELS.map((lbl, i) => (
+              <span
+                key={i}
+                style={{
+                  marginRight: ".25rem",
+                  color: step.allowed_actions.includes(i) ? "#4ade80" : "#ef4444",
+                  fontWeight: 600,
+                }}
+              >
+                {lbl.slice(0, 3)}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* ML model prediction */}
+        {step?.ml_probs && (
+          <div style={{ fontSize: ".72rem", color: "#64748b", marginBottom: ".4rem" }}>
+            ML predicción:{" "}
+            <span style={{ color: "#fbbf24" }}>normal {((step.ml_probs[0] ?? 0) * 100).toFixed(0)}%</span>
+            {" · "}
+            <span style={{ color: "#fb923c" }}>alerta {((step.ml_probs[1] ?? 0) * 100).toFixed(0)}%</span>
+            {" · "}
+            <span style={{ color: "#f87171" }}>crítico {((step.ml_probs[2] ?? 0) * 100).toFixed(0)}%</span>
+            {!step.ml_trained && (
+              <span style={{ color: "#475569", marginLeft: ".3rem" }}>(sin entrenar)</span>
+            )}
+          </div>
+        )}
+
         <div style={{ fontSize: ".75rem", color: "#64748b", marginBottom: ".5rem" }}>
           ε (exploración):{" "}
           <strong style={{ color: "#a78bfa" }}>{step?.epsilon ?? 1}</strong>

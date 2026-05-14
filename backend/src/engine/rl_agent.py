@@ -22,10 +22,12 @@ class RLAgent:
         self.epsilon_decay = epsilon_decay
         self.q_table = np.zeros((n_states, n_actions))
 
-    def select_action(self, state: dict) -> int:
+    def select_action(self, state: dict, allowed_actions: list[int] | None = None) -> int:
+        actions = allowed_actions if allowed_actions is not None else list(range(self.n_actions))
         if np.random.random() < self.epsilon:
-            return np.random.randint(self.n_actions)
-        return int(np.argmax(self.q_table[state["index"]]))
+            return int(np.random.choice(actions))
+        q_vals = self.q_table[state["index"]]
+        return int(max(actions, key=lambda a: q_vals[a]))
 
     def learn(self, state: dict, action: int, reward: float, next_state: dict):
         s, s_ = state["index"], next_state["index"]

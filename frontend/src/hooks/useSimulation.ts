@@ -3,11 +3,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export interface SimStep {
   state: { position: number; resources: number; env_condition: number; index: number };
   action: number;
+  allowed_actions: number[];
   reward: number;
   done: boolean;
   episode: number;
   total_reward: number;
   epsilon: number;
+  ml_probs: Record<number, number>;
+  ml_trained: boolean;
+}
+
+export interface ComparisonData {
+  rl: { avg_reward_last10: number; total_episodes: number; episode_rewards: number[] };
+  greedy: { avg_reward: number };
+  astar: { avg_reward: number };
 }
 
 export interface SimStats {
@@ -16,6 +25,8 @@ export interface SimStats {
   episode_rewards: number[];
   mean_reward_last10: number;
   action_distribution: Record<number, number>;
+  avg_resources?: number;
+  condition_distribution?: Record<number, number>;
 }
 
 const ACTION_LABELS = ["Mover", "Asignar recursos", "Esperar", "Reaccionar"];
@@ -30,6 +41,8 @@ export function useSimulation() {
   const [step, setStep] = useState<SimStep | null>(null);
   const [history, setHistory] = useState<SimStep[]>([]);
   const [stats, setStats] = useState<SimStats | null>(null);
+  const [comparison, setComparison] = useState<ComparisonData | null>(null);
+  const [loadingComparison, setLoadingComparison] = useState(false);
 
   const connect = useCallback(() => {
     if (ws.current) ws.current.close();
@@ -70,6 +83,16 @@ export function useSimulation() {
     if (res.ok) setStats(await res.json());
   }, []);
 
+  const fetchComparison = useCallback(async () => {
+    setLoadingComparison(true);
+    try {
+      const res = await fetch("/api/simulation/comparison");
+      if (res.ok) setComparison(await res.json());
+    } finally {
+      setLoadingComparison(false);
+    }
+  }, []);
+
   // Auto-step loop
   useEffect(() => {
     if (running) {
@@ -90,5 +113,8 @@ export function useSimulation() {
   // Connect on mount
   useEffect(() => { connect(); return () => ws.current?.close(); }, [connect]);
 
-  return { connected, running, step, history, stats, start, pause, reset, fetchStats, ACTION_LABELS };
+  return {
+    connected, running, step, history, stats, comparison, loadingComparison,
+    start, pause, reset, fetchStats, fetchComparison, ACTION_LABELS,
+  };
 }
