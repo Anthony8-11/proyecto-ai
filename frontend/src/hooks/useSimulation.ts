@@ -11,7 +11,12 @@ export interface SimStep {
   epsilon: number;
   ml_probs: Record<number, number>;
   ml_trained: boolean;
+  agent_type: "qlearning" | "dqn";
+  dqn_loss?: number;
+  dqn_buffer?: number;
 }
+
+export type AgentType = "qlearning" | "dqn";
 
 export interface ComparisonData {
   rl: { avg_reward_last10: number; total_episodes: number; episode_rewards: number[] };
@@ -43,6 +48,7 @@ export function useSimulation() {
   const [stats, setStats] = useState<SimStats | null>(null);
   const [comparison, setComparison] = useState<ComparisonData | null>(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
+  const [agentType, setAgentTypeState] = useState<AgentType>("qlearning");
 
   const connect = useCallback(() => {
     if (ws.current) ws.current.close();
@@ -93,6 +99,19 @@ export function useSimulation() {
     }
   }, []);
 
+  const switchAgent = useCallback(async (type: AgentType) => {
+    setRunning(false);
+    setHistory([]);
+    setStep(null);
+    setStats(null);
+    setAgentTypeState(type);
+    await fetch("/api/simulation/agent-type", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type }),
+    });
+  }, []);
+
   // Auto-step loop
   useEffect(() => {
     if (running) {
@@ -115,6 +134,6 @@ export function useSimulation() {
 
   return {
     connected, running, step, history, stats, comparison, loadingComparison,
-    start, pause, reset, fetchStats, fetchComparison, ACTION_LABELS,
+    agentType, start, pause, reset, fetchStats, fetchComparison, switchAgent, ACTION_LABELS,
   };
 }

@@ -29,9 +29,16 @@ class RLAgent:
         q_vals = self.q_table[state["index"]]
         return int(max(actions, key=lambda a: q_vals[a]))
 
-    def learn(self, state: dict, action: int, reward: float, next_state: dict):
+    def learn(
+        self,
+        state: dict,
+        action: int,
+        reward: float,
+        next_state: dict,
+        done: bool = False,
+    ) -> None:
         s, s_ = state["index"], next_state["index"]
-        td_target = reward + self.gamma * np.max(self.q_table[s_])
+        td_target = reward if done else reward + self.gamma * np.max(self.q_table[s_])
         self.q_table[s, action] += self.alpha * (td_target - self.q_table[s, action])
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+from src.engine.dqn_agent import DQNAgent
 from src.engine.environment import Environment
 from src.engine.logic_engine import filter_actions
 from src.engine.ml_model import EnvPredictor
@@ -106,3 +107,64 @@ def test_classic_search_evaluate_does_not_modify_env():
     assert after_state["position"] == original_state["position"]
     assert after_state["resources"] == original_state["resources"]
     assert "greedy" in results and "astar" in results
+
+
+# ---------------------------------------------------------------------------
+# DQN tests
+# ---------------------------------------------------------------------------
+
+def test_dqn_selects_action_within_allowed():
+    """DQN must only choose actions from the allowed subset."""
+    agent = DQNAgent(n_actions=4)
+    state = {"position": 1, "resources": 5, "env_condition": 0, "index": 0}
+    allowed = [1, 3]
+    for _ in range(30):
+        action = agent.select_action(state, allowed_actions=allowed)
+        assert action in allowed, f"Got {action}, expected one of {allowed}"
+
+
+def test_dqn_trains_after_buffer_warm_up():
+    """DQN loss must become non-zero once the replay buffer has enough samples."""
+    agent = DQNAgent(n_actions=4, batch_size=16, replay_capacity=500)
+    env = Environment()
+    state = env.get_state()
+    # Feed batch_size + 1 transitions to guarantee at least one training step
+    for _ in range(agent.batch_size + 1):
+        allowed = filter_actions(state, list(range(env.n_actions)))
+        action = agent.select_action(state, allowed)
+        next_state, reward, done = env.step(action)
+        agent.learn(state, action, reward, next_state, done)
+        state = env.get_state() if not done else env.reset() or env.get_state()
+    assert agent.last_loss > 0.0, "Loss should be positive after training"
+    assert agent.buffer_size >= agent.batch_size
+
+
+def test_dqn_epsilon_decays():
+    """Epsilon must strictly decrease after each learn() call."""
+    agent = DQNAgent(n_actions=4, epsilon_decay=0.9)
+    env = Environment()
+    initial_eps = agent.epsilon
+    state = env.get_state()
+    for _ in range(5):
+        action = agent.select_action(state)
+        next_state, reward, done = env.step(action)
+        agent.learn(state, action, reward, next_state, done)
+        state = next_state
+    assert agent.epsilon < initial_eps
+
+
+def test_dqn_reset_restores_initial_state():
+    """reset() must bring epsilon and buffer back to initial conditions."""
+    agent = DQNAgent(n_actions=4, batch_size=4, replay_capacity=50)
+    env = Environment()
+    state = env.get_state()
+    for _ in range(20):
+        action = agent.select_action(state)
+        next_state, reward, done = env.step(action)
+        agent.learn(state, action, reward, next_state, done)
+        state = next_state
+    assert agent.epsilon < 1.0
+    agent.reset()
+    assert agent.epsilon == 1.0
+    assert agent.buffer_size == 0
+    assert agent.last_loss == 0.0

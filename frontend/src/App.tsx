@@ -3,11 +3,12 @@ import { ComparisonView } from "./components/ComparisonView";
 import { DecisionLog } from "./components/DecisionLog";
 import { RewardChart } from "./components/RewardChart";
 import { useSimulation } from "./hooks/useSimulation";
+import type { AgentType } from "./hooks/useSimulation";
 
 export default function App() {
   const {
     connected, running, step, history, stats, comparison, loadingComparison,
-    start, pause, reset, fetchStats, fetchComparison,
+    agentType, start, pause, reset, fetchStats, fetchComparison, switchAgent,
   } = useSimulation();
 
   return (
@@ -22,6 +23,51 @@ export default function App() {
         <aside className="sidebar">
           <AgentView step={step} connected={connected} />
 
+          {/* Agent selector */}
+          <div className="card">
+            <h3>Agente</h3>
+            <div className="btn-row" style={{ marginBottom: ".75rem" }}>
+              {(["qlearning", "dqn"] as AgentType[]).map((t) => (
+                <button
+                  key={t}
+                  className={agentType === t ? "primary" : "secondary"}
+                  style={{ flex: 1 }}
+                  onClick={() => switchAgent(t)}
+                  disabled={running}
+                >
+                  {t === "qlearning" ? "Q-Learning" : "DQN"}
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: ".75rem", color: "#64748b", margin: 0 }}>
+              {agentType === "qlearning"
+                ? "Q-tabla tabular · espacio de estados discreto"
+                : "Red neuronal · MLP 3→64→64→4 · replay buffer · target net"}
+            </p>
+
+            {/* DQN-specific telemetry */}
+            {agentType === "dqn" && step?.dqn_loss !== undefined && (
+              <div
+                className="stat-grid"
+                style={{ marginTop: ".75rem", gridTemplateColumns: "1fr 1fr" }}
+              >
+                <div className="stat">
+                  <div className="label">Loss (MSE)</div>
+                  <div className="value" style={{ fontSize: ".9rem", color: "#f59e0b" }}>
+                    {step.dqn_loss.toFixed(4)}
+                  </div>
+                </div>
+                <div className="stat">
+                  <div className="label">Replay buffer</div>
+                  <div className="value" style={{ fontSize: ".9rem", color: "#a78bfa" }}>
+                    {step.dqn_buffer ?? 0}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Simulation controls */}
           <div className="card">
             <h3>Control</h3>
             <div className="btn-row">
@@ -37,6 +83,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Episode stats */}
           {stats && (
             <div className="card">
               <h3>Estadísticas</h3>
