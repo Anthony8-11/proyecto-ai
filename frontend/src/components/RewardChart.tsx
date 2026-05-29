@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   CartesianGrid,
   Line,
@@ -14,7 +15,7 @@ interface Props {
   history: SimStep[];
 }
 
-export function RewardChart({ history }: Props) {
+export const RewardChart = memo(function RewardChart({ history }: Props) {
   const data = history.map((s, i) => ({
     step: i,
     reward: s.reward,
@@ -60,4 +61,4 @@ export function RewardChart({ history }: Props) {
       )}
     </div>
   );
-}
+});

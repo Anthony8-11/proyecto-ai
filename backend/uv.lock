@@ -649,6 +649,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pydantic-settings" },
+    { name = "pyswip" },
     { name = "python-multipart" },
     { name = "scikit-learn" },
     { name = "torch" },
@@ -670,6 +671,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.1.0" },
     { name = "pandas", specifier = ">=2.2.0" },
     { name = "pydantic-settings", specifier = ">=2.6.0" },
+    { name = "pyswip", specifier = ">=0.2.10" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "scikit-learn", specifier = ">=1.5.0" },
     { name = "torch", specifier = ">=2.5.0" },
@@ -796,6 +798,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz", hash = "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f", size = 4955991, upload-time = "2026-03-29T13:29:33.898Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176", size = 1231151, upload-time = "2026-03-29T13:29:30.038Z" },
+]
+
+[[package]]
+name = "pyswip"
+version = "0.3.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ff/75/96b326387af00edd34c7cca121ce98c10062d7b8dc5ec73324727997f678/pyswip-0.3.3.tar.gz", hash = "sha256:745cc6d86046a4cf9ba775a76f00d97f7d9129f7517515228391d7399bc4fe3d", size = 35963, upload-time = "2025-06-23T00:07:11.433Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/2b/c3bfc5a53714f7fb1b092aadb95277f133ce8c605f411f8888ca7ba340dd/pyswip-0.3.3-py3-none-any.whl", hash = "sha256:abddc4729917e3631e4a516e16211cbee93d4b701700eb116d6c3e8228ec3052", size = 36095, upload-time = "2025-06-23T00:07:09.282Z" },
 ]
 
 [[package]]

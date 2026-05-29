@@ -14,25 +14,38 @@ import type { ComparisonData } from "../hooks/useSimulation";
 interface Props {
   comparison: ComparisonData | null;
   loading: boolean;
+  error?: string | null;
   onCompare: () => void;
 }
 
+const AGENT_LABEL: Record<string, string> = {
+  qlearning: "RL (Q-Learning)",
+  dqn: "RL (DQN)",
+};
+
+const RL_COLOR = "#0ea5e9";
 const ALGO_COLORS: Record<string, string> = {
-  "RL (Q-Learning)": "#0ea5e9",
-  "Greedy": "#f59e0b",
+  Greedy: "#f59e0b",
   "A*": "#a78bfa",
 };
 
-export function ComparisonView({ comparison, loading, onCompare }: Props) {
+export function ComparisonView({ comparison, loading, error, onCompare }: Props) {
+  const rlLabel = AGENT_LABEL[comparison?.rl.agent_type ?? "qlearning"] ?? "RL";
+
   const barData = comparison
     ? [
-        { name: "RL (Q-Learning)", reward: comparison.rl.avg_reward_last10 },
-        { name: "Greedy", reward: comparison.greedy.avg_reward },
-        { name: "A*", reward: comparison.astar.avg_reward },
+        { name: rlLabel, reward: comparison.rl.avg_reward_last10, isRL: true },
+        { name: "Greedy", reward: comparison.greedy.avg_reward, isRL: false },
+        { name: "A*", reward: comparison.astar.avg_reward, isRL: false },
       ]
     : [];
 
   const best = barData.length > 0 ? Math.max(...barData.map((d) => d.reward)) : null;
+
+  function getColor(name: string): string {
+    if (name === rlLabel) return RL_COLOR;
+    return ALGO_COLORS[name] ?? "#64748b";
+  }
 
   return (
     <div className="card">
@@ -55,7 +68,17 @@ export function ComparisonView({ comparison, loading, onCompare }: Props) {
         </button>
       </div>
 
-      {!comparison && !loading && (
+      {error && !loading && (
+        <div style={{
+          background: "#2d050566", border: "1px solid #7f1d1d",
+          borderRadius: 7, padding: ".6rem 1rem", marginBottom: ".75rem",
+          fontSize: ".75rem", color: "#f87171",
+        }}>
+          Error: {error}
+        </div>
+      )}
+
+      {!comparison && !loading && !error && (
         <p style={{ color: "#64748b", fontSize: ".85rem", textAlign: "center", padding: "2rem 0" }}>
           Inicia la simulación y haz clic en "Comparar" para ver el resultado.
         </p>
@@ -92,7 +115,7 @@ export function ComparisonView({ comparison, loading, onCompare }: Props) {
               <ReferenceLine y={0} stroke="#475569" strokeDasharray="4 4" />
               <Bar dataKey="reward" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 {barData.map((entry) => (
-                  <Cell key={entry.name} fill={ALGO_COLORS[entry.name] ?? "#64748b"} />
+                  <Cell key={entry.name} fill={getColor(entry.name)} />
                 ))}
               </Bar>
             </BarChart>
@@ -117,12 +140,11 @@ export function ComparisonView({ comparison, loading, onCompare }: Props) {
             <tbody>
               {barData.map((row) => {
                 const diff = row.reward - comparison.rl.avg_reward_last10;
-                const isRL = row.name === "RL (Q-Learning)";
                 const isBest = row.reward === best;
                 return (
                   <tr key={row.name} style={{ borderBottom: "1px solid #0f172a" }}>
-                    <td style={{ padding: ".4rem .5rem", color: ALGO_COLORS[row.name] }}>
-                      {isBest ? "★ " : ""}{row.name}
+                    <td style={{ padding: ".4rem .5rem", color: getColor(row.name) }}>
+                      {isBest ? <span style={{ fontSize: ".52rem", fontWeight: 900, marginRight: 4, color: "inherit" }}>BEST</span> : null}{row.name}
                     </td>
                     <td style={{ textAlign: "right", padding: ".4rem .5rem", color: "#e2e8f0" }}>
                       {row.reward.toFixed(1)}
@@ -131,10 +153,10 @@ export function ComparisonView({ comparison, loading, onCompare }: Props) {
                       style={{
                         textAlign: "right",
                         padding: ".4rem .5rem",
-                        color: isRL ? "#64748b" : diff > 0 ? "#4ade80" : "#f87171",
+                        color: row.isRL ? "#64748b" : diff > 0 ? "#4ade80" : "#f87171",
                       }}
                     >
-                      {isRL ? "—" : `${diff > 0 ? "+" : ""}${diff.toFixed(1)}`}
+                      {row.isRL ? "—" : `${diff > 0 ? "+" : ""}${diff.toFixed(1)}`}
                     </td>
                   </tr>
                 );
@@ -143,7 +165,7 @@ export function ComparisonView({ comparison, loading, onCompare }: Props) {
           </table>
 
           <p style={{ fontSize: ".75rem", color: "#475569", marginTop: ".75rem" }}>
-            RL: últimos {Math.min(10, comparison.rl.total_episodes)} episodios · Greedy/A*: 10 episodios en entorno fresco
+            {rlLabel}: últimos {Math.min(10, comparison.rl.total_episodes)} episodios · Greedy/A*: 10 episodios en entorno fresco
           </p>
         </>
       )}

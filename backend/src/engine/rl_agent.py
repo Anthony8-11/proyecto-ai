@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 
 
@@ -14,6 +16,7 @@ class RLAgent:
         epsilon_min: float = 0.05,
         epsilon_decay: float = 0.995,
     ):
+        self.n_states = n_states
         self.n_actions = n_actions
         self.alpha = alpha
         self.gamma = gamma
@@ -42,6 +45,37 @@ class RLAgent:
         self.q_table[s, action] += self.alpha * (td_target - self.q_table[s, action])
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
+    def get_q_values(self, state: dict) -> list[float]:
+        """Return Q-values for the current state (one per action)."""
+        return [round(float(v), 3) for v in self.q_table[state["index"]]]
+
     def reset(self):
         self.epsilon = 1.0
         self.q_table[:] = 0
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def save(self, path: Path) -> None:
+        """Save Q-table and epsilon to disk."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        np.save(str(path), self.q_table)
+        meta_path = Path(str(path).replace(".npy", "_meta.npy"))
+        np.save(str(meta_path), np.array([self.epsilon]))
+
+    def load(self, path: Path) -> bool:
+        """Load Q-table and epsilon. Returns True on success."""
+        try:
+            if not path.exists():
+                return False
+            loaded = np.load(str(path))
+            if loaded.shape != (self.n_states, self.n_actions):
+                return False  # stale file from different env config
+            self.q_table = loaded
+            meta_path = Path(str(path).replace(".npy", "_meta.npy"))
+            if meta_path.exists():
+                self.epsilon = float(np.load(str(meta_path))[0])
+            return True
+        except Exception:
+            return False

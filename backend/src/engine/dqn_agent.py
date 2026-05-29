@@ -15,6 +15,7 @@ them transparently.
 import collections
 import random
 from collections import deque
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -175,11 +176,56 @@ class DQNAgent:
         if self._step_count % self.target_update_freq == 0:
             self._target.load_state_dict(self._online.state_dict())
 
+    def get_q_values(self, state: dict) -> list[float]:
+        """Return the online network's Q-value estimates for the current state."""
+        x = torch.tensor(self._encode(state), dtype=torch.float32).unsqueeze(0)
+        with torch.no_grad():
+            return [round(float(v), 3) for v in self._online(x).squeeze(0).numpy()]
+
     def reset(self) -> None:
         self.epsilon = self._epsilon_start
         self._step_count = 0
         self._last_loss = 0.0
         self._build_networks()
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def save(self, path: Path) -> None:
+        """Save network weights, optimizer state and training counters."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "online_state_dict": self._online.state_dict(),
+                "target_state_dict": self._target.state_dict(),
+                "optimizer_state_dict": self._optimizer.state_dict(),
+                "epsilon": self.epsilon,
+                "step_count": self._step_count,
+            },
+            str(path),
+        )
+
+    def load(self, path: Path) -> bool:
+        """Load checkpoint. Returns True on success."""
+        try:
+            if not path.exists():
+                return False
+            checkpoint = torch.load(str(path), map_location="cpu", weights_only=True)
+            required = {
+                "online_state_dict", "target_state_dict",
+                "optimizer_state_dict", "epsilon", "step_count",
+            }
+            if not required.issubset(checkpoint.keys()):
+                return False
+            self._online.load_state_dict(checkpoint["online_state_dict"])
+            self._target.load_state_dict(checkpoint["target_state_dict"])
+            self._optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.epsilon = float(checkpoint["epsilon"])
+            self._step_count = int(checkpoint["step_count"])
+            return True
+        except Exception:
+            return False
 
     # ------------------------------------------------------------------
     @property

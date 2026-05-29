@@ -2,7 +2,7 @@ import numpy as np
 
 from src.engine.dqn_agent import DQNAgent
 from src.engine.environment import Environment
-from src.engine.logic_engine import filter_actions
+from src.engine.logic_engine import engine_backend, filter_actions
 from src.engine.ml_model import EnvPredictor
 from src.engine.rl_agent import RLAgent
 from src.engine.search import ClassicSearch
@@ -134,7 +134,9 @@ def test_dqn_trains_after_buffer_warm_up():
         action = agent.select_action(state, allowed)
         next_state, reward, done = env.step(action)
         agent.learn(state, action, reward, next_state, done)
-        state = env.get_state() if not done else env.reset() or env.get_state()
+        if done:
+            env.reset()
+        state = env.get_state()
     assert agent.last_loss > 0.0, "Loss should be positive after training"
     assert agent.buffer_size >= agent.batch_size
 
@@ -168,3 +170,45 @@ def test_dqn_reset_restores_initial_state():
     assert agent.epsilon == 1.0
     assert agent.buffer_size == 0
     assert agent.last_loss == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Prolog backend tests
+# ---------------------------------------------------------------------------
+
+def test_prolog_backend_is_active():
+    """SWI-Prolog must be the active logic engine (not the Python fallback)."""
+    assert engine_backend() == "prolog", (
+        "Expected SWI-Prolog via pyswip. "
+        "Install SWI-Prolog and ensure pyswip is in the dependencies."
+    )
+
+
+def test_prolog_rules_match_python_fallback():
+    """Prolog rules must produce the same allowed-action sets as the Python predicates.
+
+    Runs 200 random states and compares both backends. Any divergence means
+    rules.pl is out of sync with the Python fallback in logic_engine.py.
+    """
+    import random
+    from src.engine.logic_engine import _prolog_filter, _python_filter  # type: ignore[attr-defined]
+
+    rng = random.Random(42)
+    mismatches = []
+    for _ in range(200):
+        state = {
+            "position": rng.randint(0, 4),
+            "resources": rng.randint(0, 10),
+            "env_condition": rng.randint(0, 2),
+            "index": 0,
+        }
+        available = list(range(4))
+        prolog_result = sorted(_prolog_filter(state, available))
+        python_result = sorted(_python_filter(state, available))
+        if prolog_result != python_result:
+            mismatches.append((state, prolog_result, python_result))
+
+    assert not mismatches, (
+        f"{len(mismatches)} state(s) where Prolog and Python disagree:\n"
+        + "\n".join(str(m) for m in mismatches[:5])
+    )

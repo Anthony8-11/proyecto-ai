@@ -3,6 +3,9 @@
 Trains incrementally on episode history stored by Analytics.
 """
 
+from pathlib import Path
+
+import joblib
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -34,3 +37,32 @@ class EnvPredictor:
     @property
     def is_trained(self) -> bool:
         return self._trained
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def save(self, path: Path) -> None:
+        """Save trained model to disk (no-op if not yet trained)."""
+        if not self._trained:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(
+            {"model": self._model, "le": self._le, "trained": self._trained},
+            str(path),
+        )
+
+    def load(self, path: Path) -> bool:
+        """Load model from disk. Returns True on success."""
+        try:
+            if not path.exists():
+                return False
+            data = joblib.load(str(path))
+            if not isinstance(data, dict) or "model" not in data:
+                return False
+            self._model = data["model"]
+            self._le = data["le"]
+            self._trained = data.get("trained", True)
+            return True
+        except Exception:
+            return False

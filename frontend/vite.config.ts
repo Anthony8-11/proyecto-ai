@@ -10,4 +10,14 @@ export default defineConfig({
       "/api/ws": { target: "ws://localhost:8000", ws: true },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Recharts + React + D3 internals — the heaviest dependency
+          "vendor-charts": ["recharts"],
+        },
+      },
+    },
+  },
 });

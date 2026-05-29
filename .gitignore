@@ -23,5 +23,23 @@ dist/
 Thumbs.db
 
 # Data
-*.csv
 *.parquet
+
+# Training persistence (backend/data/) — excluir archivos generados, conservar carpeta
+backend/data/*.csv
+backend/data/*.npy
+backend/data/*.pt
+backend/data/*.joblib
+!backend/data/.gitkeep
+
+# Build artifacts / cache
+.vite/
+frontend/tsconfig.app.tsbuildinfo
+frontend/.tsbuildinfo
+
+# Logs
+backend/backend.log
+*.log
+
+# Claude Code session data (no relevante para el proyecto)
+.claude/
