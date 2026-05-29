@@ -7,6 +7,16 @@
 
 ---
 
+## Repositorio del proyecto
+
+| | |
+|---|---|
+| **GitHub** | _[insertar URL aquí]_ |
+| **Rama principal** | `main` / `develop` |
+| **Instrucciones de instalación** | Ver `README.md` en el repositorio |
+
+---
+
 ## Tabla de contenidos
 
 1. [Introducción](#1-introducción)
