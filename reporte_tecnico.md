@@ -11,7 +11,7 @@
 
 | | |
 |---|---|
-| **GitHub** | _[insertar URL aquí]_ |
+| **GitHub** | https://github.com/Anthony8-11/proyecto-ai |
 | **Rama principal** | `main` / `develop` |
 | **Instrucciones de instalación** | Ver `README.md` en el repositorio |
 
